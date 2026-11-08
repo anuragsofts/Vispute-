@@ -3,6 +3,8 @@ import Image from 'next/image'
 import { getDb } from '@/lib/mongodb/client'
 import { formatPrice } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   let tables: any[] = []
   let featuredDishes: any[] = []

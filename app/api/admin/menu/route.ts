@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb/client'
 import { ObjectId } from 'mongodb'
 
+export const dynamic = 'force-dynamic'
+
 // Add new menu item
 export async function POST(request: NextRequest) {
   try {
