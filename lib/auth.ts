@@ -22,12 +22,13 @@ export async function getAuthUser(): Promise<AuthUser | null> {
 
   if (!user) return null
 
-  const { data: staffData } = await supabase
+  const { data } = await supabase
     .from('staff')
     .select('role, name')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
+  const staffData = data as { role: StaffRole; name: string } | null
   if (!staffData) return null
 
   return {

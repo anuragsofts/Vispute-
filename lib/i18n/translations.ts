@@ -260,6 +260,10 @@ export const translations = {
     langHi: 'हिंदी',
     langEn: 'English',
   },
-} as const
+}
 
-export type Translations = typeof translations.mr
+export type Translations = {
+  [K in keyof typeof translations.mr]: (typeof translations.mr)[K] extends (...args: infer A) => string
+    ? (...args: A) => string
+    : string
+}
