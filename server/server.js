@@ -201,7 +201,10 @@ app.post('/api/reset-demo', (req, res) => {
 });
 
 // Serve frontend build if in production
-const clientDist = path.join(__dirname, '../client/dist');
+const fs = require('fs');
+const clientDist = fs.existsSync(path.join(__dirname, '../dist/index.html'))
+  ? path.join(__dirname, '../dist')
+  : path.join(__dirname, '../client/dist');
 app.use(express.static(clientDist));
 
 app.use((req, res, next) => {
