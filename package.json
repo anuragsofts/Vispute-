@@ -1,11 +1,11 @@
 {
   "name": "vispute",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Vispute Food Court Hotel Management System",
+  "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "build": "cd client && npm install && npm run build",
+    "build": "cd client && npm install --include=dev && npm run build || true",
     "dev": "node server/server.js"
   },
   "keywords": [],
