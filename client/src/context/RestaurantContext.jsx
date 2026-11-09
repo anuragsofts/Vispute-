@@ -13,7 +13,18 @@ export const RestaurantProvider = ({ children }) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeNotification, setActiveNotification] = useState(null);
 
-  // Initialize Tables with instant offline seed fallback
+  // Auto-clear old mock/static data on version change
+  const STORAGE_VERSION = 'vfc_clean_live_2026';
+  try {
+    if (typeof window !== 'undefined' && localStorage.getItem('vispute_storage_version') !== STORAGE_VERSION) {
+      localStorage.removeItem('vispute_tables');
+      localStorage.removeItem('vispute_bills');
+      localStorage.removeItem('vispute_orders');
+      localStorage.setItem('vispute_storage_version', STORAGE_VERSION);
+    }
+  } catch (e) {}
+
+  // Initialize Tables with clean fresh tables (all 12 available, 0 bills)
   const [tables, setTables] = useState(() => {
     try {
       const saved = localStorage.getItem('vispute_tables');
