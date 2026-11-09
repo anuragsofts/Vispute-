@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRestaurant } from '../context/RestaurantContext';
 import { 
   Utensils, 
@@ -16,16 +16,18 @@ import {
 
 // Preset authentic photos for quick 1-click selection
 const PRESET_PHOTOS = [
-  { label: 'मिसळ पाव / Misal Pav', url: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop&q=60' },
-  { label: 'व्हेज थाळी / Veg Thali', url: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=500&auto=format&fit=crop&q=60' },
+  { label: 'पापड / Papad', url: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop&q=60' },
+  { label: 'मोमोज / Momos', url: 'https://images.unsplash.com/photo-1625220194771-7ebdea0b70b9?w=500&auto=format&fit=crop&q=60' },
+  { label: 'सूप / Soup', url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&auto=format&fit=crop&q=60' },
+  { label: 'पनीर टिक्का / Paneer Tikka', url: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=500&auto=format&fit=crop&q=60' },
+  { label: 'मंचुरियन / Manchurian', url: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=500&auto=format&fit=crop&q=60' },
+  { label: 'नूडल्स / Noodles', url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=500&auto=format&fit=crop&q=60' },
+  { label: 'फ्राईड राईस / Fried Rice', url: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=500&auto=format&fit=crop&q=60' },
+  { label: 'दाल तडका / Dal Tadka', url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=500&auto=format&fit=crop&q=60' },
   { label: 'पनीर बटर मसाला / Paneer', url: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop&q=60' },
-  { label: 'बटर चिकन / Butter Chicken', url: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=500&auto=format&fit=crop&q=60' },
-  { label: 'चिकन बिर्याणी / Biryani', url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=60' },
-  { label: 'तंदुरी रोटी / Naan Roti', url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500&auto=format&fit=crop&q=60' },
-  { label: 'मँगो लस्सी / Mango Lassi', url: 'https://images.unsplash.com/photo-1570696516188-ade861b84a49?w=500&auto=format&fit=crop&q=60' },
-  { label: 'गुलाब जामून / Gulab Jamun', url: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=500&auto=format&fit=crop&q=60' },
-  { label: 'हक्का नूडल्स / Hakka Noodles', url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=500&auto=format&fit=crop&q=60' },
-  { label: 'मसाला चहा / Masala Tea', url: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&auto=format&fit=crop&q=60' }
+  { label: 'रोटी / Roti', url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500&auto=format&fit=crop&q=60' },
+  { label: 'दम बिर्याणी / Biryani', url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=60' },
+  { label: 'चास / Chaas', url: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=500&auto=format&fit=crop&q=60' }
 ];
 
 export const MenuManager = () => {
@@ -35,30 +37,33 @@ export const MenuManager = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
 
-  // New item form
+  // Dynamic Categories from existing menu
+  const categories = useMemo(() => {
+    const set = new Set(menu.map(m => m.category));
+    return ['All', ...Array.from(set)];
+  }, [menu]);
+
+  // New item form state
   const [newItem, setNewItem] = useState({
     name: '',
-    category: 'Vispute Specials',
+    marathiName: '',
+    category: 'Special Veg',
     price: '',
     isVeg: true,
     description: '',
     prepTime: '12 mins',
-    image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=500&auto=format&fit=crop&q=60'
+    image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop&q=60'
   });
-
-  const categories = [
-    'All', 
-    'Vispute Specials', 
-    'Starters', 
-    'Main Course', 
-    'Breads & Rice', 
-    'Chinese', 
-    'Beverages & Desserts'
-  ];
 
   const filteredMenu = menu.filter(item => {
     if (selectedCategory !== 'All' && item.category !== selectedCategory) return false;
-    if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const matchEn = item.name.toLowerCase().includes(q);
+      const matchMr = item.marathiName && item.marathiName.toLowerCase().includes(q);
+      const matchCat = item.category.toLowerCase().includes(q);
+      if (!matchEn && !matchMr && !matchCat) return false;
+    }
     return true;
   });
 
@@ -85,27 +90,35 @@ export const MenuManager = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!newItem.name || !newItem.price) {
+    if ((!newItem.name && !newItem.marathiName) || !newItem.price) {
       showNotification('कृपया पदार्थाचे नाव आणि किंमत टाका (Enter dish name and price)', 'error');
       return;
     }
 
     try {
+      const dishName = newItem.name || newItem.marathiName;
+      const marathiName = newItem.marathiName || newItem.name;
+
       await addMenuItem({
         ...newItem,
-        price: Number(newItem.price)
+        name: dishName,
+        marathiName,
+        price: Number(newItem.price),
+        description: newItem.description || `${marathiName} (${dishName}) - ताजे व चविष्ट`
       });
+
       setShowAddModal(false);
       setNewItem({
         name: '',
-        category: 'Vispute Specials',
+        marathiName: '',
+        category: 'Special Veg',
         price: '',
         isVeg: true,
         description: '',
         prepTime: '12 mins',
-        image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=500&auto=format&fit=crop&q=60'
+        image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop&q=60'
       });
-      showNotification(`मेनूमध्ये नवीन पदार्थ "${newItem.name}" जोडला!`, 'success');
+      showNotification(`मेनूमध्ये नवीन पदार्थ "${marathiName}" जोडला गेला!`, 'success');
     } catch (err) {
       showNotification(err.message, 'error');
     }
@@ -336,19 +349,34 @@ export const MenuManager = () => {
               </div>
             </div>
 
-            {/* Dish Name */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">
-                {lang === 'mr' ? 'पदार्थाचे नाव' : 'Dish Name'}
-              </label>
-              <input
-                type="text"
-                required
-                placeholder={lang === 'mr' ? 'उदा. कोल्हापुरी मटण सुक्का / स्पेशल पनीर' : 'e.g. Kolhapuri Mutton Sukka'}
-                value={newItem.name}
-                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
-              />
+            {/* Dish Names: Marathi & English */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  {lang === 'mr' ? 'पदार्थाचे मराठी नाव *' : 'Marathi Dish Name *'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder={lang === 'mr' ? 'उदा. पनीर बटर मसाला' : 'e.g. पनीर बटर मसाला'}
+                  value={newItem.marathiName}
+                  onChange={(e) => setNewItem({ ...newItem, marathiName: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  {lang === 'mr' ? 'इंग्रजी नाव (English Name)' : 'English Dish Name'}
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Paneer Butter Masala"
+                  value={newItem.name}
+                  onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
