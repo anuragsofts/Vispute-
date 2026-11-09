@@ -13,8 +13,28 @@ import {
   ChevronRight, 
   Sparkles,
   ArrowLeft,
-  BellRing
+  BellRing,
+  X,
+  PhoneCall
 } from 'lucide-react';
+
+const CATEGORY_MAP = {
+  'All': { mr: 'सर्व', icon: '🍽️' },
+  'Papad': { mr: 'पापड', icon: '🫓' },
+  'Momos': { mr: 'मोमोज', icon: '🥟' },
+  'Soup': { mr: 'सूप', icon: '🍲' },
+  'Beverages': { mr: 'ताक / चास', icon: '🥛' },
+  'Indian Starter': { mr: 'स्टार्टर्स', icon: '🍟' },
+  'Tandoor Starter': { mr: 'तंदूर स्टार्टर्स', icon: '🍢' },
+  'Chinese Starter': { mr: 'चायनीज स्टार्टर्स', icon: '🥢' },
+  'Noodles': { mr: 'नूडल्स', icon: '🍜' },
+  'Chinese Rice': { mr: 'चायनीज राईस', icon: '🍚' },
+  'Veg Bahar': { mr: 'व्हेज बहार', icon: '🥘' },
+  'Special Veg': { mr: 'स्पेशल व्हेज', icon: '🍲' },
+  'Paneer Special': { mr: 'पनीर स्पेशल', icon: '🧀' },
+  'Roti': { mr: 'रोटी / नान', icon: '🫓' },
+  'Biryani and Rice': { mr: 'बिर्याणी व राईस', icon: '🍛' }
+};
 
 export const CustomerMenu = ({ tableNumberOverride = null }) => {
   const { tables, menu, placeOrder, requestBill, showNotification, t, lang } = useRestaurant();
@@ -27,7 +47,6 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
   const [vegOnly, setVegOnly] = useState(false);
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCartDrawer, setShowCartDrawer] = useState(false);
@@ -50,7 +69,10 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
       if (vegOnly && !item.isVeg) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        return item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q);
+        const matchesName = item.name.toLowerCase().includes(q);
+        const matchesMr = item.marathiName && item.marathiName.toLowerCase().includes(q);
+        const matchesCat = item.category.toLowerCase().includes(q);
+        return matchesName || matchesMr || matchesCat;
       }
       return true;
     });
@@ -68,6 +90,7 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
         name: dish.marathiName ? `${dish.marathiName} / ${dish.name}` : dish.name,
         price: dish.price,
         isVeg: dish.isVeg,
+        image: dish.image,
         quantity: 1,
         notes: ''
       }];
@@ -104,7 +127,7 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
       setNotes('');
       setShowCartDrawer(false);
       setActiveTab('status'); // Switch to live tracking
-      showNotification(`Order placed for Table ${currentTable.tableNumber}! Kitchen has started cooking.`, 'success');
+      showNotification(`ऑर्डर नोंदवली गेली! किचनमध्ये तयार करण्याचे काम सुरू झाले आहे.`, 'order');
     } catch (err) {
       showNotification(err.message, 'error');
     } finally {
@@ -115,91 +138,94 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
   const handleRequestBill = async () => {
     try {
       await requestBill(currentTable.id);
-      showNotification('Bill requested! Waiter & cashier have been notified.', 'bill');
+      showNotification('बिल मागवले गेले आहे! कॅशियर व वेटरला सूचना गेली आहे.', 'bill');
     } catch (err) {
       showNotification(err.message, 'error');
     }
   };
 
   return (
-    <div className="flex justify-center bg-slate-100 min-h-full py-0 sm:py-6">
-      {/* Mobile-device frame container */}
-      <div className="w-full max-w-md bg-white min-h-[92vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+    <div className="w-full h-full overflow-y-auto bg-slate-100 flex justify-center">
+      {/* Mobile-First Container (Max 600px width on tablets/desktops) */}
+      <div className="w-full max-w-lg bg-white min-h-full flex flex-col shadow-xl relative border-x border-slate-200">
         
-        {/* Customer Top Branding Bar */}
-        <div className="bg-emerald-800 text-white p-4 shrink-0 shadow-md">
+        {/* TOP BRANDING BAR (Mobile Friendly Sticky Header) */}
+        <div className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white px-4 py-3 shrink-0 shadow-md sticky top-0 z-20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-white text-emerald-800 font-black flex items-center justify-center text-sm shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-white text-emerald-800 font-black flex items-center justify-center text-sm shadow-sm shrink-0">
                 VF
               </div>
               <div>
-                <h1 className="font-extrabold text-base leading-tight tracking-wide">
+                <h1 className="font-extrabold text-sm sm:text-base leading-tight tracking-wide">
                   {t('brandName')}
                 </h1>
-                <div className="flex items-center gap-1.5 text-emerald-200 text-xs">
-                  <span>{t('hotelTagline')}</span>
+                <div className="text-[11px] text-emerald-200 font-medium">
+                  {t('hotelTagline')}
                 </div>
               </div>
             </div>
 
-            {/* Table Badge Selector (allows quick testing of any table) */}
-            <div className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-xl backdrop-blur-xs border border-white/20">
-              <span className="text-[11px] text-emerald-100 font-medium">टेबल / Table</span>
+            {/* Table Badge Selector */}
+            <div className="flex items-center gap-1.5 bg-white/20 px-2.5 py-1 rounded-xl backdrop-blur-xs border border-white/25">
+              <span className="text-[10px] text-emerald-100 font-bold uppercase">टेबल</span>
               <select
                 value={selectedTableNumber}
                 onChange={(e) => setSelectedTableNumber(Number(e.target.value))}
                 className="bg-transparent text-white font-black text-sm outline-hidden cursor-pointer"
               >
                 {tables.map(t => (
-                  <option key={t.id} value={t.tableNumber} className="text-slate-900">
-                    #{t.tableNumber} ({t.name})
+                  <option key={t.id} value={t.tableNumber} className="text-slate-900 font-bold">
+                    #{t.tableNumber}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Table Active Status Notification Banner */}
+          {/* Table Active Status Notification Banner (if table has ongoing session) */}
           {activeSession && (
-            <div className="mt-3 bg-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs border border-white/15">
-              <div>
-                <span className="text-emerald-200">{t('runningBill')}:</span>
-                <span className="font-mono font-bold text-sm ml-1 text-white">
+            <div className="mt-2.5 bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between text-xs border border-white/20">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-emerald-100 font-medium">{t('runningBill')}:</span>
+                <span className="font-mono font-black text-sm text-white">
                   ₹{currentTable.currentBillTotal}
                 </span>
-                <span className="text-[10px] text-emerald-300 ml-1.5">
+                <span className="text-[10px] text-emerald-200">
                   ({activeSession.rounds?.length || 0} {lang === 'mr' ? 'फेऱ्या' : 'rounds'})
                 </span>
               </div>
               <button
                 onClick={() => setActiveTab(activeTab === 'menu' ? 'status' : 'menu')}
-                className="px-2.5 py-1 bg-white text-emerald-900 rounded-lg text-xs font-bold shadow-xs hover:bg-emerald-50 transition-all"
+                className="px-2.5 py-1 bg-white text-emerald-900 rounded-lg text-[11px] font-black shadow-xs active:scale-95 transition-all"
               >
                 {activeTab === 'menu' ? (lang === 'mr' ? 'लाईव्ह स्थिती' : 'Track Live') : t('orderMore')}
               </button>
             </div>
           )}
 
-          {/* Navigation Tabs */}
-          <div className="flex mt-3 bg-emerald-950/40 p-1 rounded-xl text-xs font-bold">
+          {/* Segmented Control Tabs */}
+          <div className="flex mt-2.5 bg-emerald-950/40 p-1 rounded-xl text-xs font-bold">
             <button
               onClick={() => setActiveTab('menu')}
-              className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
-                activeTab === 'menu' ? 'bg-white text-emerald-900 shadow-xs' : 'text-emerald-200'
+              className={`flex-1 py-1.5 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === 'menu' ? 'bg-white text-emerald-900 shadow-xs font-black' : 'text-emerald-200'
               }`}
             >
-              🍽️ {t('foodMenu')}
+              <span>🍽️</span>
+              <span>{t('foodMenu')}</span>
             </button>
             <button
               onClick={() => setActiveTab('status')}
-              className={`flex-1 py-1.5 rounded-lg text-center transition-all relative ${
-                activeTab === 'status' ? 'bg-white text-emerald-900 shadow-xs' : 'text-emerald-200'
+              className={`flex-1 py-1.5 rounded-lg text-center transition-all flex items-center justify-center gap-1.5 relative ${
+                activeTab === 'status' ? 'bg-white text-emerald-900 shadow-xs font-black' : 'text-emerald-200'
               }`}
             >
-              🧾 {t('tableBillStatus')}
+              <span>🧾</span>
+              <span>{t('tableBillStatus')}</span>
               {activeSession && (
-                <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-2" />
+                <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1.5 right-2 animate-ping" />
               )}
             </button>
           </div>
@@ -207,93 +233,136 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
 
         {/* TAB 1: MENU ORDERING */}
         {activeTab === 'menu' && (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Search & Veg Filter */}
-            <div className="p-3 bg-slate-50 border-b border-slate-200 flex gap-2 shrink-0">
+          <div className="flex-1 flex flex-col">
+            {/* Search Bar & Veg Filter (Sticky under top header) */}
+            <div className="p-2.5 sm:p-3 bg-slate-50 border-b border-slate-200 flex gap-2 shrink-0 sticky top-[138px] z-10 shadow-2xs">
               <div className="relative flex-1">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder={t('searchPlaceholder')}
+                  placeholder={lang === 'mr' ? 'पदार्थ किंवा कॅटेगरी शोधा...' : t('searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-emerald-500"
+                  className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-emerald-500 shadow-2xs"
                 />
               </div>
 
               <button
                 onClick={() => setVegOnly(!vegOnly)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 ${
                   vegOnly ? 'bg-emerald-100 border-emerald-400 text-emerald-800' : 'bg-white border-slate-200 text-slate-600'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                {lang === 'mr' ? 'शाकाहारी 🟢' : 'Pure Veg'}
+                <span>{lang === 'mr' ? 'शाकाहारी 🟢' : 'Pure Veg'}</span>
               </button>
             </div>
 
-            {/* Categories scrollable pill list */}
-            <div className="px-3 py-2 bg-white border-b border-slate-100 overflow-x-auto flex gap-1.5 shrink-0">
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-emerald-700 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+            {/* Horizontal Scrollable Categories */}
+            <div className="px-2.5 py-2 bg-white border-b border-slate-100 overflow-x-auto flex gap-1.5 shrink-0 no-scrollbar">
+              {categories.map(cat => {
+                const info = CATEGORY_MAP[cat] || { mr: cat, icon: '🍴' };
+                const label = lang === 'mr' ? info.mr : cat;
+                const isSelected = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-emerald-700 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300'
+                    }`}
+                  >
+                    <span>{info.icon}</span>
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Menu Items List */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-24">
+            {/* Dishes Count Info */}
+            <div className="px-3 py-1.5 bg-slate-50 text-[11px] text-slate-500 font-medium flex justify-between items-center border-b border-slate-100">
+              <span>{filteredMenu.length} {lang === 'mr' ? 'पदार्थ उपलब्ध' : 'dishes available'}</span>
+              {selectedCategory !== 'All' && (
+                <button
+                  onClick={() => setSelectedCategory('All')}
+                  className="text-emerald-700 font-bold hover:underline"
+                >
+                  {lang === 'mr' ? 'सर्व दाखवा' : 'Show All'}
+                </button>
+              )}
+            </div>
+
+            {/* Dish List (Mobile Optimized Swiggy/Zomato Style) */}
+            <div className="p-3 space-y-3 pb-28">
               {filteredMenu.map(dish => {
                 const inCart = cart.find(i => i.id === dish.id);
                 return (
                   <div
                     key={dish.id}
-                    className="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs flex gap-3 items-center hover:border-emerald-300 transition-all"
+                    className="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs flex gap-3 items-center hover:border-emerald-300 transition-all relative overflow-hidden"
                   >
-                    <img
-                      src={dish.image}
-                      alt={dish.name}
-                      className="w-20 h-20 rounded-xl object-cover border border-slate-100 shrink-0"
-                    />
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-2.5 h-2.5 rounded-full border ${dish.isVeg ? 'bg-emerald-500 border-emerald-700' : 'bg-rose-500 border-rose-700'}`} />
-                        <h3 className="font-bold text-xs text-slate-900 truncate">
-                          {dish.marathiName ? `${dish.marathiName} / ${dish.name}` : dish.name}
-                        </h3>
+                    {/* Left: Info */}
+                    <div className="flex-1 min-w-0 pr-1">
+                      {/* Veg Badge */}
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="w-3.5 h-3.5 rounded-xs border-2 border-emerald-600 flex items-center justify-center p-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 block" />
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
+                          {dish.category}
+                        </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 leading-snug">
+
+                      {/* Marathi & English Name */}
+                      <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
+                        {dish.marathiName || dish.name}
+                      </h3>
+                      {dish.marathiName && (
+                        <p className="text-[11px] text-slate-500 font-medium leading-none mt-0.5">
+                          {dish.name}
+                        </p>
+                      )}
+
+                      {/* Price */}
+                      <div className="font-black text-slate-900 font-mono text-base mt-1.5">
+                        ₹{dish.price}
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
                         {dish.description}
                       </p>
+                    </div>
 
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="font-black text-slate-900 font-mono text-sm">
-                          ₹{dish.price}
-                        </div>
+                    {/* Right: Image & Action Button */}
+                    <div className="flex flex-col items-center shrink-0 w-24 sm:w-28">
+                      <div className="w-24 h-24 sm:w-28 sm:h-24 rounded-2xl overflow-hidden border border-slate-200 shadow-2xs relative bg-slate-100">
+                        <img
+                          src={dish.image}
+                          alt={dish.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
 
+                      {/* Mobile Touch Stepper / ADD Button (36px high touch targets) */}
+                      <div className="-mt-3.5 z-10 w-full flex justify-center">
                         {inCart ? (
-                          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-300 rounded-lg px-2 py-0.5">
+                          <div className="flex items-center justify-between w-[92%] bg-emerald-700 text-white rounded-xl shadow-md px-1 py-0.5 border border-emerald-800">
                             <button
                               onClick={() => updateQuantity(dish.id, -1)}
-                              className="w-5 h-5 rounded bg-emerald-600 text-white font-black text-xs flex items-center justify-center"
+                              className="w-7 h-7 rounded-lg bg-emerald-800 hover:bg-emerald-900 active:scale-90 font-black text-base flex items-center justify-center transition-transform"
                             >
                               -
                             </button>
-                            <span className="text-xs font-bold text-emerald-950 font-mono">
+                            <span className="font-black text-xs font-mono px-1">
                               {inCart.quantity}
                             </span>
                             <button
                               onClick={() => updateQuantity(dish.id, 1)}
-                              className="w-5 h-5 rounded bg-emerald-600 text-white font-black text-xs flex items-center justify-center"
+                              className="w-7 h-7 rounded-lg bg-emerald-800 hover:bg-emerald-900 active:scale-90 font-black text-base flex items-center justify-center transition-transform"
                             >
                               +
                             </button>
@@ -301,9 +370,10 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
                         ) : (
                           <button
                             onClick={() => addToCart(dish)}
-                            className="px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1"
+                            className="w-[92%] py-1.5 bg-white hover:bg-emerald-50 active:scale-95 text-emerald-800 border-2 border-emerald-600 rounded-xl font-black text-xs shadow-md flex items-center justify-center gap-1 transition-all"
                           >
-                            <Plus className="w-3.5 h-3.5" /> Add
+                            <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{lang === 'mr' ? 'जोडा' : 'ADD'}</span>
                           </button>
                         )}
                       </div>
@@ -313,22 +383,31 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
               })}
             </div>
 
-            {/* Floating Cart Bar (Bottom) */}
+            {/* STICKY FLOATING BOTTOM CART BAR (Swiggy / Zomato Mobile Style) */}
             {cart.length > 0 && (
-              <div className="p-3 bg-white border-t border-slate-200 shadow-xl shrink-0">
+              <div className="fixed bottom-16 md:bottom-3 left-3 right-3 max-w-lg mx-auto z-40 animate-in slide-in-from-bottom duration-200">
                 <button
                   onClick={() => setShowCartDrawer(true)}
-                  className="w-full py-3 px-4 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl font-bold text-xs flex items-center justify-between shadow-lg shadow-emerald-700/20"
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-800 hover:to-teal-900 text-white rounded-2xl font-bold text-xs flex items-center justify-between shadow-2xl shadow-emerald-950/40 active:scale-[0.99] transition-all border border-emerald-500/40"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-white text-emerald-800 font-black text-xs flex items-center justify-center">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-full bg-white text-emerald-900 font-black text-xs flex items-center justify-center shadow-xs">
                       {cartItemCount}
                     </span>
-                    <span>View Order Summary</span>
+                    <div className="text-left">
+                      <div className="font-extrabold text-xs">
+                        {lang === 'mr' ? 'ऑर्डर तपासा' : 'View Cart & Order'}
+                      </div>
+                      <div className="text-[10px] text-emerald-200 font-medium">
+                        {cartItemCount} {lang === 'mr' ? 'पदार्थ निवडले' : 'items selected'}
+                      </div>
+                    </div>
                   </div>
-                  <span className="font-mono text-sm font-black">
-                    ₹{cartTotal} ➔
-                  </span>
+
+                  <div className="flex items-center gap-1.5 font-mono text-sm font-black bg-white/20 px-3 py-1.5 rounded-xl backdrop-blur-xs">
+                    <span>₹{cartTotal}</span>
+                    <span>➔</span>
+                  </div>
                 </button>
               </div>
             )}
@@ -337,21 +416,21 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
 
         {/* TAB 2: TABLE BILL & LIVE STATUS */}
         {activeTab === 'status' && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
             {activeSession ? (
-              <div>
+              <div className="space-y-4">
                 {/* Active Session Overview Card */}
-                <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 shadow-xs">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl p-4 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700">
-                        Table #{currentTable.tableNumber} Active Bill
+                        {lang === 'mr' ? `टेबल #${currentTable.tableNumber} चालू बिल` : `Table #${currentTable.tableNumber} Running Bill`}
                       </span>
-                      <div className="text-2xl font-black text-emerald-950 font-mono mt-0.5">
+                      <div className="text-3xl font-black text-emerald-950 font-mono mt-0.5">
                         ₹{currentTable.currentBillTotal}
                       </div>
-                      <div className="text-xs text-emerald-800 mt-1">
-                        Guest: <span className="font-bold">{activeSession.guestName}</span>
+                      <div className="text-xs text-emerald-800 mt-1 font-medium">
+                        {lang === 'mr' ? 'ग्राहक' : 'Guest'}: <span className="font-bold">{activeSession.guestName}</span>
                       </div>
                     </div>
 
@@ -362,33 +441,43 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
                         currentTable.status === 'bill_requested' ? 'bg-rose-600 text-white' :
                         'bg-emerald-600 text-white'
                       }`}>
-                        {currentTable.status.replace('_', ' ')}
+                        {currentTable.status === 'preparing' ? (lang === 'mr' ? 'किचनमध्ये तयार होत आहे' : 'Preparing') :
+                         currentTable.status === 'ready' ? (lang === 'mr' ? 'तयार आहे (Ready)' : 'Ready') :
+                         currentTable.status === 'bill_requested' ? (lang === 'mr' ? 'बिल मागवले' : 'Bill Requested') :
+                         (lang === 'mr' ? 'टेबल सुरू' : 'Occupied')}
                       </span>
-                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
-                        {activeSession.rounds?.length || 0} order rounds
+                      <div className="text-[11px] text-slate-500 mt-1 font-mono font-bold">
+                        {activeSession.rounds?.length || 0} {lang === 'mr' ? 'ऑर्डर फेऱ्या' : 'rounds'}
                       </div>
                     </div>
                   </div>
 
-                  {/* Customer Repeated Ordering Note */}
+                  {/* Multi-Round note */}
                   <div className="mt-3 pt-3 border-t border-emerald-200 text-[11px] text-emerald-800 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>
-                      Table is active! You can order repeatedly anytime during your meal; all items stay on this same bill.
+                      {lang === 'mr'
+                        ? 'जेवताना तुम्ही पुन्हा पुन्हा ऑर्डर करू शकता; सर्व ऑर्डर्स याच बिलात जोडल्या जातील.'
+                        : 'You can order repeatedly anytime during your meal; all items stay on this same bill.'}
                     </span>
                   </div>
                 </div>
 
                 {/* Multi-Round Breakdown */}
-                <div className="mt-4 space-y-3">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                    Live Kitchen Status of Your Dishes
+                <div className="space-y-3">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                    {lang === 'mr' ? 'किचनमधून पदार्थांची थेट स्थिती' : 'Live Kitchen Status of Your Dishes'}
                   </h3>
 
                   {activeSession.rounds?.map((round) => (
                     <div key={round.roundNumber} className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs">
                       <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs font-bold text-slate-700">
-                        <span>Round {round.roundNumber} ({round.orderType})</span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] flex items-center justify-center font-mono">
+                            {round.roundNumber}
+                          </span>
+                          <span>फेरी {round.roundNumber} ({round.orderType})</span>
+                        </span>
                         <span className="text-slate-400 font-mono text-[11px]">
                           {new Date(round.orderedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
@@ -396,12 +485,12 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
 
                       <div className="mt-2.5 space-y-2">
                         {round.items.map(item => (
-                          <div key={item.id} className="flex items-center justify-between text-xs">
+                          <div key={item.id} className="flex items-center justify-between text-xs py-1 border-b border-slate-50 last:border-0">
                             <div className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full ${
+                              <span className={`w-2.5 h-2.5 rounded-full ${
                                 item.status === 'served' ? 'bg-slate-400' :
-                                item.status === 'prepared' ? 'bg-amber-500' :
-                                'bg-purple-500 animate-pulse'
+                                item.status === 'prepared' ? 'bg-emerald-500 animate-pulse' :
+                                'bg-amber-500 animate-pulse'
                               }`} />
                               <span className="font-bold text-slate-800">
                                 {item.quantity}× {item.name}
@@ -411,11 +500,12 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
                             <div className="flex items-center gap-2">
                               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                                 item.status === 'served' ? 'bg-slate-100 text-slate-600' :
-                                item.status === 'prepared' ? 'bg-amber-100 text-amber-800' :
-                                item.status === 'preparing' ? 'bg-purple-100 text-purple-800' :
-                                'bg-amber-50 text-amber-700'
+                                item.status === 'prepared' ? 'bg-emerald-100 text-emerald-800' :
+                                'bg-amber-100 text-amber-800'
                               }`}>
-                                {item.status === 'prepared' ? 'Ready to Serve' : item.status}
+                                {item.status === 'served' ? (lang === 'mr' ? 'सर्व्ह केले' : 'Served') :
+                                 item.status === 'prepared' ? (lang === 'mr' ? 'तयार आहे' : 'Ready') :
+                                 (lang === 'mr' ? 'तयार होत आहे' : 'Preparing')}
                               </span>
                               <span className="font-mono font-bold text-slate-900">
                                 ₹{item.price * item.quantity}
@@ -428,100 +518,110 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
                   ))}
                 </div>
 
-                {/* Bill Request or Order More Action Buttons */}
-                <div className="mt-6 space-y-2 pt-2">
+                {/* Action Buttons */}
+                <div className="space-y-2.5 pt-2">
                   <button
                     onClick={() => setActiveTab('menu')}
-                    className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
                   >
-                    <Plus className="w-4 h-4" /> {t('orderMore')} (Round {(activeSession.rounds?.length || 0) + 1})
+                    <Plus className="w-4 h-4" />
+                    <span>{t('orderMore')} (फेरी {(activeSession.rounds?.length || 0) + 1})</span>
                   </button>
 
                   <button
                     onClick={handleRequestBill}
-                    className="w-full py-2.5 bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-2xs"
+                    className="w-full py-3 bg-rose-50 border-2 border-rose-300 text-rose-800 hover:bg-rose-100 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-2xs active:scale-95 transition-all"
                   >
-                    <Receipt className="w-4 h-4" /> {t('callWaiterToPay')}
+                    <Receipt className="w-4 h-4" />
+                    <span>{lang === 'mr' ? 'बिल मागवा (वेटर / काउंटरला सूचना पाठवा)' : t('callWaiterToPay')}</span>
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="py-16 text-center">
-                <Utensils className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-800">No Active Order on Table {currentTable.tableNumber}</h3>
+              <div className="py-20 text-center">
+                <Utensils className="w-14 h-14 text-slate-300 mx-auto mb-3" />
+                <h3 className="text-base font-black text-slate-800">
+                  {lang === 'mr' ? `टेबल #${currentTable.tableNumber} वर सध्या कोणतीही चालू ऑर्डर नाही` : `No Active Order on Table #${currentTable.tableNumber}`}
+                </h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                  Browse our menu and place your first round of starters or beverages to get started!
+                  {lang === 'mr' ? 'मेनूमधून आवडते पदार्थ निवडा आणि पहिली ऑर्डर नोंदवा!' : 'Browse our menu and place your first round of starters to get started!'}
                 </p>
                 <button
                   onClick={() => setActiveTab('menu')}
-                  className="mt-4 px-4 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold"
+                  className="mt-4 px-6 py-2.5 bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md"
                 >
-                  Browse Menu
+                  {lang === 'mr' ? 'मेनू उघडा' : 'Browse Menu'}
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* CART CHECKOUT DRAWER */}
+        {/* MOBILE SLIDE-UP CART BOTTOM SHEET */}
         {showCartDrawer && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex justify-end">
-            <div className="w-full max-w-md bg-white h-full flex flex-col justify-between animate-in slide-in-from-right">
-              {/* Header */}
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end justify-center animate-in fade-in duration-200">
+            <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[85vh] flex flex-col justify-between shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden">
+              {/* Drawer Header */}
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowCartDrawer(false)}
-                    className="p-1 rounded-lg hover:bg-slate-200"
-                  >
-                    <ArrowLeft className="w-5 h-5 text-slate-600" />
-                  </button>
-                  <h3 className="font-bold text-sm text-slate-800">
-                    Your Order (Table #{currentTable.tableNumber})
-                  </h3>
+                  <div className="w-7 h-7 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs">
+                    T{currentTable.tableNumber}
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
+                      {lang === 'mr' ? 'तुमची ऑर्डर (तपासा)' : 'Your Order Review'}
+                    </h3>
+                    <p className="text-[10px] text-slate-500">
+                      {lang === 'mr' ? `टेबल #${currentTable.tableNumber}` : `Table #${currentTable.tableNumber}`}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs text-slate-500 font-mono">
-                  {cartItemCount} items
-                </span>
+
+                <button
+                  onClick={() => setShowCartDrawer(false)}
+                  className="p-1.5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {/* Items List */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {cart.map(item => (
-                  <div key={item.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <div key={item.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${item.isVeg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                        <span className="font-bold text-xs text-slate-900">{item.name}</span>
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                        <span className="font-bold text-xs text-slate-900 truncate">{item.name}</span>
                       </div>
-                      <span className="font-bold font-mono text-xs text-slate-900">
+                      <span className="font-black font-mono text-xs text-slate-900 shrink-0">
                         ₹{item.price * item.quantity}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pt-1">
                       <input
                         type="text"
-                        placeholder="Special request (e.g. less oil)..."
+                        placeholder={lang === 'mr' ? 'विशेष सूचना (उदा. कमी तिखट)...' : 'Special request (e.g. less spicy)...'}
                         value={item.notes}
                         onChange={(e) => {
                           const val = e.target.value;
                           setCart(prev => prev.map(i => i.id === item.id ? { ...i, notes: val } : i));
                         }}
-                        className="flex-1 mr-2 px-2 py-1 bg-white border border-slate-200 rounded text-[11px]"
+                        className="flex-1 mr-2 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] focus:outline-hidden focus:border-emerald-500"
                       />
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 bg-white border border-slate-300 rounded-xl px-1.5 py-0.5 shadow-2xs shrink-0">
                         <button
                           onClick={() => updateQuantity(item.id, -1)}
-                          className="w-5 h-5 rounded bg-slate-200 font-bold text-xs"
+                          className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-90 font-black text-xs flex items-center justify-center text-slate-700"
                         >
                           -
                         </button>
-                        <span className="text-xs font-bold font-mono">{item.quantity}</span>
+                        <span className="text-xs font-black font-mono px-1 min-w-[16px] text-center">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="w-5 h-5 rounded bg-slate-200 font-bold text-xs"
+                          className="w-6 h-6 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-90 font-black text-xs flex items-center justify-center text-white"
                         >
                           +
                         </button>
@@ -530,35 +630,41 @@ export const CustomerMenu = ({ tableNumberOverride = null }) => {
                   </div>
                 ))}
 
-                {/* Optional Customer Name */}
+                {/* Customer Name */}
                 <div className="pt-2">
                   <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                    Your Name (Optional for Order Calling):
+                    {lang === 'mr' ? 'तुमचे नाव (पर्यायी):' : 'Your Name (Optional):'}
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Rahul Patil"
+                    placeholder={lang === 'mr' ? 'उदा. सचिन विस्पुते' : 'e.g. Rahul Patil'}
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
               </div>
 
-              {/* Bottom Send Button */}
-              <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
+              {/* Bottom Send to Kitchen Button */}
+              <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3 shrink-0">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-600">Round Total:</span>
-                  <span className="text-base font-black font-mono text-slate-900">₹{cartTotal}</span>
+                  <span className="text-slate-600 font-bold">
+                    {lang === 'mr' ? 'एकूण रक्कम:' : 'Round Total:'}
+                  </span>
+                  <span className="text-xl font-black font-mono text-slate-900">₹{cartTotal}</span>
                 </div>
 
                 <button
                   disabled={isSubmitting}
                   onClick={handlePlaceOrder}
-                  className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/30 active:scale-95 transition-all"
                 >
                   <Utensils className="w-4 h-4" />
-                  {isSubmitting ? 'Sending to Kitchen...' : `Confirm & Send to Kitchen (₹${cartTotal})`}
+                  <span>
+                    {isSubmitting
+                      ? (lang === 'mr' ? 'किचनमध्ये पाठवत आहे...' : 'Sending to Kitchen...')
+                      : (lang === 'mr' ? `किचनमध्ये ऑर्डर पाठवा (₹${cartTotal}) ➔` : `Confirm & Send to Kitchen (₹${cartTotal})`)}
+                  </span>
                 </button>
               </div>
             </div>

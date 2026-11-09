@@ -31,6 +31,7 @@ export const WaiterOrder = ({ initialSelectedTable = null }) => {
   const [guestName, setGuestName] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMobileCartSheet, setShowMobileCartSheet] = useState(false);
 
   const selectedTable = tables.find(t => t.id === selectedTableId) || tables[0];
 
@@ -337,8 +338,8 @@ export const WaiterOrder = ({ initialSelectedTable = null }) => {
             </div>
           </div>
 
-          {/* Right Column: Waiter Order Ticket / Cart */}
-          <div className="w-full lg:w-96 bg-white flex flex-col justify-between border-l border-slate-200">
+          {/* Desktop Right Column: Waiter Order Ticket / Cart */}
+          <div className="hidden lg:flex w-96 bg-white flex-col justify-between border-l border-slate-200 shrink-0">
             {/* Header info */}
             <div className="p-4 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center justify-between">
@@ -457,6 +458,110 @@ export const WaiterOrder = ({ initialSelectedTable = null }) => {
               )}
             </div>
           </div>
+
+          {/* MOBILE FLOATING ACTION BAR FOR WAITER CART */}
+          {cart.length > 0 && (
+            <div className="lg:hidden fixed bottom-16 left-3 right-3 z-30 animate-in slide-in-from-bottom duration-200">
+              <button
+                onClick={() => setShowMobileCartSheet(true)}
+                className="w-full py-3.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl font-bold text-xs flex items-center justify-between shadow-2xl border border-emerald-500/40 active:scale-95 transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-white text-emerald-800 font-black text-xs flex items-center justify-center">
+                    {cart.reduce((a, b) => a + b.quantity, 0)}
+                  </span>
+                  <span>T{selectedTable.tableNumber} • {lang === 'mr' ? 'ऑर्डर तपासा' : 'Review Order'}</span>
+                </div>
+                <span className="font-mono font-black text-sm">
+                  ₹{cartTotal} ➔
+                </span>
+              </button>
+            </div>
+          )}
+
+          {/* MOBILE SLIDE-UP WAITER CART BOTTOM SHEET */}
+          {showMobileCartSheet && (
+            <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end justify-center animate-in fade-in duration-150">
+              <div className="w-full max-w-lg bg-white rounded-t-3xl max-h-[85vh] flex flex-col justify-between shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-800">
+                      {selectedTable?.name} - {lang === 'mr' ? 'ऑर्डर तपासा' : 'Order Review'}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-mono">
+                      {cart.reduce((a, b) => a + b.quantity, 0)} {lang === 'mr' ? 'पदार्थ निवडले' : 'dishes selected'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowMobileCartSheet(false)}
+                    className="p-1.5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-3 bg-slate-50 border-b border-slate-200 shrink-0">
+                  <input
+                    type="text"
+                    placeholder="Guest Name (optional)"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs"
+                  />
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+                  {cart.map(item => (
+                    <div key={item.id} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                      <div className="min-w-0 pr-2">
+                        <div className="font-bold text-xs text-slate-900 truncate">
+                          {item.name}
+                        </div>
+                        <div className="text-[11px] font-mono font-bold text-slate-600">
+                          ₹{item.price * item.quantity}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg p-0.5 shrink-0">
+                        <button
+                          onClick={() => updateCartQuantity(item.id, -1)}
+                          className="w-6 h-6 rounded bg-slate-100 font-black text-xs"
+                        >
+                          -
+                        </button>
+                        <span className="text-xs font-bold font-mono px-1">{item.quantity}</span>
+                        <button
+                          onClick={() => updateCartQuantity(item.id, 1)}
+                          className="w-6 h-6 rounded bg-emerald-600 text-white font-black text-xs"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2.5 shrink-0">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-600">Round Total:</span>
+                    <span className="text-xl font-black font-mono text-slate-900">₹{cartTotal}</span>
+                  </div>
+
+                  <button
+                    disabled={cart.length === 0 || isSubmitting}
+                    onClick={async () => {
+                      await handleSendToKitchen();
+                      setShowMobileCartSheet(false);
+                    }}
+                    className="w-full py-3.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>{isSubmitting ? 'Sending...' : `Send Order to Kitchen (₹${cartTotal})`}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         /* Kitchen Pickup Tab: Waiter delivers prepared items to tables */

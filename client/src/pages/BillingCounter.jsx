@@ -393,10 +393,42 @@ export const BillingCounter = ({ initialSelectedTable = null }) => {
       </div>
 
       {activeTab === 'billing' ? (
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
           
-          {/* LEFT: TABLE SELECTOR STRIP (1 to 12) */}
-          <div className="w-full lg:w-72 bg-white border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
+          {/* MOBILE TABLE SELECTOR STRIP (Horizontal Carousel) */}
+          <div className="lg:hidden bg-white border-b border-slate-200 p-2 overflow-x-auto flex items-center gap-1.5 shrink-0 no-scrollbar shadow-2xs">
+            {tables.map(table => {
+              const isSelected = table.id === selectedTableId;
+              const isBillReq = table.status === 'bill_requested';
+              return (
+                <button
+                  key={table.id}
+                  type="button"
+                  onClick={() => setSelectedTableId(table.id)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 border active:scale-95 ${
+                    isSelected
+                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                      : isBillReq
+                      ? 'bg-rose-50 border-rose-300 text-rose-950 font-black animate-pulse'
+                      : table.currentBillTotal > 0
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-bold'
+                      : 'bg-white border-slate-200 text-slate-700'
+                  }`}
+                >
+                  <span className="font-black">T{table.tableNumber}</span>
+                  {table.currentBillTotal > 0 && (
+                    <span className={`text-[10px] font-mono px-1 rounded ${isSelected ? 'bg-white/20' : 'bg-emerald-100 text-emerald-800'}`}>
+                      ₹{table.currentBillTotal}
+                    </span>
+                  )}
+                  {isBillReq && <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* DESKTOP TABLE SELECTOR STRIP (1 to 12) */}
+          <div className="hidden lg:flex w-72 bg-white border-r border-slate-200 flex-col overflow-hidden shrink-0">
             <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
                 टेबल निवडा [1-9 दाबा]

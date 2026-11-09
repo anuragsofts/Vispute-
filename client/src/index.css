@@ -36,3 +36,24 @@
 .pulse-badge {
   animation: pulseGlow 2s infinite;
 }
+
+/* Hide scrollbar for clean horizontal mobile carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Better mobile touch scrolling and tap feedback */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (-webkit-touch-callout: none) {
+  /* iOS safe height adjustment */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}

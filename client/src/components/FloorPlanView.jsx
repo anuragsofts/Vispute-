@@ -20,7 +20,9 @@ export const FloorPlanView = ({ onSelectTableForOrder, onSelectTableForBill, onO
   const { tables, stats, t, lang } = useRestaurant();
   const [activeFloor, setActiveFloor] = useState('Main Floor');
   const [selectedTable, setSelectedTable] = useState(null);
-  const [viewMode, setViewMode] = useState('floor'); // 'floor' or 'cards'
+  const [viewMode, setViewMode] = useState(() => {
+    return typeof window !== 'undefined' && window.innerWidth < 768 ? 'cards' : 'floor';
+  });
 
   const currentTables = tables.filter(t => t.section === activeFloor);
 
@@ -64,69 +66,69 @@ export const FloorPlanView = ({ onSelectTableForOrder, onSelectTableForBill, onO
   return (
     <div className="flex flex-col h-full bg-[#f8fafc]">
       {/* Odoo Style Sub-header */}
-      <div className="flex flex-wrap items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between px-3 md:px-6 py-2.5 bg-white border-b border-slate-200 shadow-xs gap-2">
         <div className="flex items-center gap-2">
           {/* Main Food Court Floor */}
-          <div className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 border-2 border-emerald-500 text-emerald-900 flex items-center gap-1.5">
+          <div className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 border border-emerald-500 text-emerald-900 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span>{lang === 'mr' ? 'विस्पुते फूड कोर्ट (हॉल)' : 'Vispute Food Court Hall'}</span>
+            <span>{lang === 'mr' ? 'विस्पुते फूड कोर्ट' : 'Vispute Food Court'}</span>
           </div>
 
-          <div className="h-5 w-px bg-slate-300 mx-1" />
+          <div className="h-4 w-px bg-slate-300 mx-0.5" />
 
           {/* View toggle */}
           <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-medium">
             <button
-              onClick={() => setViewMode('floor')}
-              className={`px-3 py-1 rounded-md transition-all ${
-                viewMode === 'floor' ? 'bg-white shadow-xs text-slate-800 font-semibold' : 'text-slate-600'
-              }`}
-            >
-              🗺️ {t('layoutView')}
-            </button>
-            <button
               onClick={() => setViewMode('cards')}
-              className={`px-3 py-1 rounded-md transition-all ${
-                viewMode === 'cards' ? 'bg-white shadow-xs text-slate-800 font-semibold' : 'text-slate-600'
+              className={`px-2.5 py-1 rounded-md transition-all ${
+                viewMode === 'cards' ? 'bg-white shadow-xs text-slate-900 font-black' : 'text-slate-600'
               }`}
             >
               📑 {t('quickCards')}
+            </button>
+            <button
+              onClick={() => setViewMode('floor')}
+              className={`px-2.5 py-1 rounded-md transition-all ${
+                viewMode === 'floor' ? 'bg-white shadow-xs text-slate-900 font-black' : 'text-slate-600'
+              }`}
+            >
+              🗺️ {t('layoutView')}
             </button>
           </div>
         </div>
 
         {/* Live Legend matching reference image */}
-        <div className="flex items-center gap-4 text-xs font-medium text-slate-600">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-3.5 rounded-sm bg-emerald-500 border border-emerald-600 inline-block" />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] font-medium text-slate-600">
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 border border-emerald-600 inline-block" />
             <span>{t('occupied')}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#d6cbbe] border-2 border-purple-500 inline-block" />
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-xs bg-[#d6cbbe] border-2 border-purple-500 inline-block" />
             <span>{t('preparing')}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-3.5 rounded-sm bg-emerald-500 relative inline-block">
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full" />
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 relative inline-block">
+              <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-rose-500 rounded-full" />
             </span>
             <span>{t('ready')}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#d6cbbe] border-2 border-rose-400 inline-block" />
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-xs bg-[#d6cbbe] border-2 border-rose-400 inline-block" />
             <span>{t('billRequested')}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-3.5 rounded-sm bg-[#d8cbbd] border border-[#b8a694] inline-block" />
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-xs bg-[#d8cbbd] border border-[#b8a694] inline-block" />
             <span>{t('available')}</span>
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-auto p-4 md:p-6 flex justify-center items-start">
+      <div className="flex-1 overflow-auto p-2 sm:p-4 md:p-6 flex justify-start md:justify-center items-start">
         {viewMode === 'floor' ? (
           /* Odoo Real Floor Blueprint View */
-          <div className="relative w-[1000px] h-[720px] bg-[#baa690] rounded-xl border-8 border-[#1e293b] shadow-2xl overflow-hidden select-none">
+          <div className="min-w-[1000px] w-[1000px] h-[720px] bg-[#baa690] rounded-xl border-4 md:border-8 border-[#1e293b] shadow-2xl overflow-hidden select-none relative shrink-0">
             {/* Wooden Floor Planks Texture effect */}
             <div 
               className="absolute inset-0 opacity-15 pointer-events-none"
@@ -377,8 +379,8 @@ export const FloorPlanView = ({ onSelectTableForOrder, onSelectTableForBill, onO
 
       {/* Table Quick Inspector Drawer / Modal */}
       {selectedTable && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex justify-end">
-          <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-stretch sm:justify-end animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-none max-h-[88vh] sm:max-h-full sm:h-full shadow-2xl flex flex-col animate-in slide-in-from-bottom sm:slide-in-from-right duration-200 overflow-hidden">
             {/* Drawer Header */}
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-3">
