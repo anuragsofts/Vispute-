@@ -5,7 +5,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "build": "cd client && npm install --include=dev && npm run build || true",
+    "build": "node build.js",
     "dev": "node server/server.js"
   },
   "keywords": [],
